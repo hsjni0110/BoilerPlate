@@ -34,51 +34,51 @@ const userSchema = mongoose.Schema({
 });
 //데이터 베이스에 저장하기 전 실행함(미들웨어)
 userSchema.pre('save', function (next) {
-	//비밀번호를 암호화 시킨다.
-	//여기서 this는 userSchema를 뜻한다.
-	var user = this;
-	if (user.isModified('password')) {
-		//에러가 나면 err를 next해주어 에러처리한다.
-		//hash의 첫 번쨰 인자는 plain이다.
-		//여기서 인자 hash는 암호화된 값이다.
-		bcrypt.genSalt(saltRounds, function (err, salt) {
-			if(err) return next(err);
-			
-			bcrypt.hash(user.password, salt, function (err, hash) {
-				if (err) return next(err);
-				user.password = hash;
-				next();
-			});
-		});
-	} else {
-		next();	
-	}
-});
+    var user = this;
+    if (user.isModified('password')) {
+        //비밀번호를 암호화 시킨다.
+        bcrypt.genSalt(saltRounds, function (err, salt) {
+            if (err) return next(err)
+
+            bcrypt.hash(user.password, salt, function (err, hash) {
+                if (err) return next(err)
+                user.password = hash
+                next()
+            })
+        })
+    } else {
+        next()
+    }
+})
+
 
 userSchema.methods.comparePassword = function(plainPassword, cb){
 	bcrypt.compare(plainPassword, this.password, function(err, isMatch){
-		if(err) return cb(err),
-			cb(null, isMatch)
+		if(err) {return cb(err)}
+		return cb(null, isMatch)
 	})
 }
 //compare method는 콜백함수에 err혹은 결과 값(true or false)를 내놓는다.
 //즉, cb(null, isMatch)시, true를 내놓기에 isMatch는 true가된다.
 
 
-userSchema.methods.generateToken = function(cb){
-	var user = this; // 현재 스키마에 회원정보 저장
-	var token = jwt.sign(user._id.toHexString(), 'secretToken');
-	
-	
-	user.token = token
-	//몽고 DB에 저장
-	user.save(function(err, user){
-		if(err) return cb(err)
-		cb(null,user)
-	})
-	//mongoose에서 콜백함수는 err를 리턴하고 싶다면, err만 넣으면 되고, 에러발생이 아닐 시, user객체를 넣게 된다.
-}
+userSchema.methods.generateToken = function (cb) {
+    var user = this;
+    // console.log('user._id', user._id)
 
+    // jsonwebtoken을 이용해서 token을 생성하기 
+    var token = jwt.sign(user._id.toHexString(), 'secretToken')
+    // user._id + 'secretToken' = token 
+    // -> 
+    // 'secretToken' -> user._id
+
+    user.token = token
+    user.save(function (err, user) {
+        if (err){return cb(err)}
+        else(cb(null, user))
+    })
+}
+//mongoose에서 콜백함수는 err를 리턴하고 싶다면, err만 넣으면 되고, 에러발생이 아닐 시, user객체를 넣게 된다.
 userSchema.statics.findByToken = function(token, cb){
 	var user = this;
 	

@@ -12,6 +12,7 @@ const mongoose = require('mongoose');
 app.use(express.json());
 //application/json
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 mongoose
 	.connect(config.mongoURI, {
@@ -21,11 +22,10 @@ mongoose
 	.then(() => console.log('MongoDB Connected...'))
 	.catch((err) => console.log(err));
 
-app.get('/', (req, res) => res.send('Hello World!~~ 안녕하세요~!'));
 
-app.get('/api/hello',(req,res) => {
-	res.send("안녕하세요~")
-})
+app.get('/api/hello', (req, res) => {
+	res.send('안녕하세요~');
+});
 
 app.post('/api/users/register', (req, res) => {
 	//회원 가입 시 필요한 정보들을 client에서 가져옴
@@ -68,7 +68,7 @@ app.post('/api/users/login', (req, res) => {
       user.generateToken((err, user) => {
         if (err) return res.status(400).send(err);
 
-        // 토큰을 저장한다.  어디에 ?  쿠키 , 로컳스토리지 , 세션 등
+        // 토큰을 저장한다.  어디에 ?  쿠키 , 로컳스토리지 
         res.cookie("x_auth", user.token)
           .status(200)
           .json({ loginSuccess: true, userId: user._id })
@@ -76,7 +76,6 @@ app.post('/api/users/login', (req, res) => {
     })
   })
 })
-
 app.get('/api/users/auth', auth, (req, res) => {
 	//여기까지 미들웨어를 통과했다는 말은 Authentication이 True라는 말임
 	res.status(200).json({
